@@ -1,7 +1,7 @@
 # Heterozygosity-in-Rats
 
 
-#first thing is writing script to aligning primary, alternate assembly and reference using pggb
+#First thing is writing script to aligning primary, alternate assembly and reference using pggb
 
 ```#!/bin/bash
 set -x
@@ -43,7 +43,7 @@ $samtools faidx "$outputfinal"
 sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 8 -o outputvcf2.2 -V GRCr8'
 ```
 
-#the next step should be extracting heterozigocity from vcf file
+#The next step should be extracting heterozigocity from vcf file
 
 ```bcftools view -i 'GT="1|0" || GT="0|1"' combinedfinal.fa.gz.bf3285f.eb0f3d3.867196c.smooth.final.grcr8.vcf > output.vcf```
 
@@ -52,8 +52,8 @@ sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 8 -o 
 ```awk '!/^#/ && $10 ~ /0\/1/ {print $1"\t"$2 - 1"\t"$2"\t"$4"\t"$10}' heterovarinats.vcf > variants.bed```
 
 
-#next step is using wfmash to match each ID in gff format of grcr8 to name of the genes
-#first script
+#Next step is using wfmash to match each ID in gff format of grcr8 to name of the genes
+
 ```
 #!/bin/bash
 
@@ -63,21 +63,24 @@ wfmash=/gnu/store/8kma8dr0g1h6kz04dkcs336c9zn2q7gm-wfmash-0.12.5-1+0222f7c/bin/w
 
 
 # Input files
-target_fa="/lizardfs/guarracino/ratty/assemblies/BN_Lx_Cub/BN_Lx_Cub.fa.gz"
-query_fa="/lizardfs/guarracino/ratty/assemblies/BN_Lx_Cub/BN_Lx_Cub.alt.fa.gz"
+target_fa=$1
+query_fa=$2
+output=$3
+
 
 # Run wfmash with the specified parameters
-$wfmash -t 48  $target_fa $query_fa > outputwfmash.paf
+$wfmash -t 48  $1 $2 > $3
+
 ```
 
-```bash script.sh /GRCr8.fa.gz GCF_036323735.1_GRCr8_genomic.fna.gz outputwfmash.paf```
+```bash script.sh GRCr8.fa.gz GCF_036323735.1_GRCr8_genomic.fna.gz outputwfmash.paf```
 
 
-#intersect the het region calls with genes from grcr8
+#Intersect the het region calls with genes from grcr8
 
-```bedtools intersect -wao -a heterovarinats.vcf -b updated_gff_file4.gff > bedtoolsintersectwao.bed```
+```bedtools intersect -wao -a heterovarinats.vcf -b updated_gff_file.gff > bedtoolsintersectwao.bed```
 
-#given gene list for Gene Ontology
+#Given gene list for Gene Ontology
 
 
 
