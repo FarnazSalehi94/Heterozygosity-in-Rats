@@ -45,11 +45,11 @@ sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 8 -o 
 
 #the next step should be extracting heterozigocity from vcf file
 
-bcftools view -i 'GT="1|0" || GT="0|1"' combinedfinal.fa.gz.bf3285f.eb0f3d3.867196c.smooth.final.grcr8.vcf > output.vcf
+```bcftools view -i 'GT="1|0" || GT="0|1"' combinedfinal.fa.gz.bf3285f.eb0f3d3.867196c.smooth.final.grcr8.vcf > output.vcf```
 
 #convert the file to the bed format
 
-awk '!/^#/ && $10 ~ /0\/1/ {print $1"\t"$2 - 1"\t"$2"\t"$4"\t"$10}' heterovarinats.vcf > variants.bed
+```awk '!/^#/ && $10 ~ /0\/1/ {print $1"\t"$2 - 1"\t"$2"\t"$4"\t"$10}' heterovarinats.vcf > variants.bed```
 
 
 #next step is using wfmash to match each ID in gff format of grcr8 to name of the genes
