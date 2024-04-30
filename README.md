@@ -53,6 +53,8 @@ sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 8 -o 
 
 
 #Next step is using wfmash to match each ID in gff format of grcr8 to name of the genes
+#First it is needed to download *.gff and *.fna from this link ```https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/10116/GCF_036323735.1-RS_2024_02/```
+#The other file we need is Grcr8.fa.gz
 
 ```
 #!/bin/bash
@@ -75,6 +77,9 @@ $wfmash -t 48  $1 $2 > $3
 
 ```bash script.sh GRCr8.fa.gz GCF_036323735.1_GRCr8_genomic.fna.gz outputwfmash.paf```
 
+#Then we use this command to update the name in our gff file: 
+
+```awk -F'\t' 'BEGIN {OFS="\t"} NR==FNR{a[$1]=$6;next} $1 in a{$1=a[$1]}1' outputwfmash.paf GCF_036323735.1_GRCr8_genomic.gff > updated_gff_file.gff```
 
 #Intersect the het region calls with genes from grcr8
 
