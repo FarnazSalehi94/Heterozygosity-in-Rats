@@ -143,6 +143,68 @@ $wfmash -t 48  $1 $2 > $3
 
 #Given gene list for Gene Ontology
 
+Enrichment Analysis
+
+we use four different application gProfiler, DAVID, EnrichR, and ToppGene.
+
+for EnrichR, and ToppGene, they do not accept rat gene list; therefore we need to translate our rat gene list to human. 
+
+
+For this, we use following R script:
+
+
+```
+######homologene#####
+install.packages("homologene")
+library(homologene)
+
+setwd("/Users/.../")
+
+
+
+# Install and load the homologene package if not already installed
+if (!requireNamespace("homologene", quietly = TRUE)) {
+  install.packages("homologene")
+}
+library(homologene)
+
+# Specify the path to the gene list file
+gene_list_file = "unique_gene_list.txt" # Update with the correct path if needed
+
+# Check if the file exists before attempting to read it
+if (!file.exists(gene_list_file)) {
+  stop(paste("File not found:", gene_list_file))
+}
+
+# Read the list of rat genes from the input file
+rat_genes = readLines(gene_list_file)
+
+# Function to retrieve human orthologs
+get_human_orthologs <- function(rat_genes) {
+  orthologs <- homologene(rat_genes, inTax = 10116, outTax = 9606)
+  orthologs_df <- as.data.frame(orthologs)
+  return(orthologs_df)
+}
+
+# Retrieve human orthologs
+human_orthologs_df = get_human_orthologs(rat_genes)
+
+# View the results
+print(human_orthologs_df)
+
+
+# Extract the first column of the data frame
+first_column <- human_orthologs_df[, 1]
+
+# Save the first column to a file
+output_file <- "human_orthologs.txt"
+write.table(first_column, file = output_file, quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+```
+
+
+
+
 
 
 
