@@ -3,7 +3,8 @@
 
 #First thing is writing script to aligning primary, alternate assembly and reference using pggb
 
-```#!/bin/bash
+```
+#!/bin/bash
 set -x
 set -v
 
@@ -43,6 +44,61 @@ $samtools faidx "$outputfinal"
 sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 8 -o outputvcf2.2 -V GRCr8'
 ```
 
+
+Next script : extracting Heterozigosity, and related genes.
+
+```
+#!/bin/bash
+set -x
+set -v
+
+
+
+input1=$1
+
+base1=$(basename "$input1"combinedfinalGRCr8.fa.gz.bf3285f.eb0f3d3.11fe66b.smooth.final.grcr8.vcf)
+base2=$(basename "$input1"combinedfinalGRCr8vcf.2)
+output1="$input1"heterovariant.vcf
+output2="$input1"heterovariants.bed
+output3="$input1"bedtoolsintersectwao.bed
+output4="$input1"gene_list.txt
+output5="$input1"gene_list_without_prefix.txt
+output6="$input1"unique_gene_list.txt
+
+
+bcftools view  -i 'GT="0|1" || GT="1|0" || GT="0|2" || GT="2|0"' /lizardfs/salehi/Ass_Ref/$input1/pggb/$base2/$base1  > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output1                                  
+
+cut -f 1,2,4,10 /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output1 > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output2                                                                                  
+
+bedtools intersect -wao -a $output1 -b /lizardfs/salehi/Ass_Ref/BN_Lx_Cub/pggb/BN_Lx_CubcombinedfinalGRCr8vcf.2/test/updated_gff_file4.gff > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output3             
+
+
+grep -o 'gene-[^;]\+' /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output3 > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output4                                                                            
+
+awk '{sub(/^gene-/, "", $0); print}' /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output4 > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output5                                                             
+
+
+sort /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output5 | uniq > /lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$output6                                                                                      
+
+
+echo This is something $(date)
+```
+
+
+Script for copy files: 
+```
+#!/bin/bash
+set -x
+set -v
+
+
+
+input1=$1
+base1=$(basename "$input1"unique_gene_list.txt)
+base2=$(basename "$input1"gene_list_without_prefix.txt)
+
+scp salehi@octopus01:/lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$base1 salehi@octopus01:/lizardfs/salehi/Ass_Ref/$input1/pggb/enrich/$base2  /Users/erikgarrison/Desktop/GO/Enrichment\ Analysis/$input1
+```
 #The next step should be extracting heterozigocity from vcf file
 
 ```bcftools view -i 'GT="1|0" || GT="0|1"' combinedfinal.fa.gz.bf3285f.eb0f3d3.867196c.smooth.final.grcr8.vcf > output.vcf```
