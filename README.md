@@ -1,5 +1,32 @@
 # Heterozygosity-in-Rats
 
+#Calculate Coverage per base
+```
+#!/bin/bash
+set -x
+set -v
+
+input1=$1
+
+
+samtools faidx merged.fa
+
+cut -f1,2 merged.fa.fai > genome.txt
+
+awk '{print $0 "\tname" NR}' col134.bed > col134_with_name.bed
+
+bedtools bedtobam -i col134_with_name.bed -g genome.txt > alignment.bam
+
+samtools sort alignment.bam -o alignment.sorted.bam
+
+samtools index alignment.sorted.bam
+
+bedtools genomecov -d -ibam alignment.sorted.bam > $input1coverage.txt
+
+sbatch -p workers -c 48 --wrap 'bedtools -D /scratch/ genomecov -d -ibam alignment.sorted.bam > $input1coverage.txt'
+
+echo This is something $(date)
+```
 
 #First thing is writing script to aligning primary, alternate assembly and reference using pggb
 
