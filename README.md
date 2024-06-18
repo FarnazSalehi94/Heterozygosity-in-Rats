@@ -138,9 +138,9 @@ echo This is something $(date)
 
 
 
-Enrichment Analysis:
+Enrichment Analysis
 
-gProfiler
+gProfiler:
 
 ```
 cat > automatedEAgprofiler.R << 'EOF'
@@ -263,6 +263,98 @@ first_column <- human_orthologs_df[, 1]
 output_file <- "human_orthologs.txt"
 write.table(first_column, file = output_file, quote = FALSE, row.names = FALSE, col.names = FALSE)
 ```
+
+
+
+EnrichR:
+
+
+```vi automatedEnrichR.R```
+
+```
+#!/usr/bin/env Rscript
+
+# Load necessary libraries
+library(enrichR)
+library(ggplot2)
+library(dplyr)
+
+# Define function to perform enrichment analysis and save results
+perform_enrichment_analysis <- function(gene_list_file) {
+  # Read gene list
+  genes <- readLines(gene_list_file)
+  
+  # Define databases for enrichment analysis
+  databases <- c("KEGG_2021_Human", "Reactome_2022", "GO_Biological_Process_2023", 
+                 "GO_Cellular_Component_2023", "GO_Molecular_Function_2023")
+
+                 
+  
+  # Perform enrichment analysis
+  enrich_results <- tryCatch({
+    enrichr(genes, databases)
+  }, error = function(e) {
+    message("Error in retrieving results: ", e)
+    return(NULL)
+  })
+  
+  if (is.null(enrich_results)) {
+    return(NULL)
+  }
+  
+
+  
+  # Save results to CSV files
+  for (db in names(enrich_results)) {
+    write.csv(enrich_results[[db]], paste0(db, "_enrichment_results.csv"), row.names = FALSE)
+  }
+  
+  # Function to plot top 10 enrichment results with gradient color
+  plot_top_10 <- function(enrichment_data, title) {
+    top_10 <- enrichment_data %>%
+      arrange(P.value) %>%
+      head(10)
+    
+    top_10$Term <- factor(top_10$Term, levels = rev(top_10$Term))
+    
+    ggplot(top_10, aes(x = Term, y = -log10(P.value), fill = -log10(P.value))) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      scale_fill_gradient(low = "#c6dbef", high = "#08306b") +
+      labs(title = title, x = "Pathway/Term", y = "-log10(P.value)") +
+      theme_minimal(base_size = 14) +
+      theme(plot.background = element_rect(fill = "white"),
+            panel.background = element_rect(fill = "white"),
+            panel.grid.major = element_line(color = "grey90"),
+            panel.grid.minor = element_line(color = "grey90"),
+            plot.title = element_text(hjust = 0.5, face = "bold"),
+            axis.title.x = element_text(face = "bold"),
+            axis.title.y = element_text(face = "bold"),
+            legend.position = "none")
+  }
+  
+  # Plot and save top 10 results for each database
+  for (db in names(enrich_results)) {
+    if (nrow(enrich_results[[db]]) > 0) {
+      p <- plot_top_10(enrich_results[[db]], paste0("Top 10 Enriched Terms in ", db))
+      ggsave(paste0(db, "_top10.png"), plot = p, width = 15, height = 5)
+    } else {
+      message(paste("No results for", db))
+    }
+  }
+}
+
+# Check if the correct number of arguments is provided
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 1) {
+  stop("Usage: Rscript enrichment_analysis.R <gene_list_file>")
+}
+
+# Perform enrichment analysis
+perform_enrichment_analysis(args[[1]])
+```
+
+```Rscript automatedEnrichR.R inputfile.txt```
 
 
 
