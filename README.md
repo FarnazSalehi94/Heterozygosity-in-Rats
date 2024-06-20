@@ -122,7 +122,7 @@ output5="$input1"gene_list_without_prefix.txt
 output6="$input1"unique_gene_list.txt
 
 #extracting heterozigocity from vcf file
-bcftools view  -i 'GT="0|1" || GT="1|0" || GT="0|2" || GT="2|0"' /lizardfs/salehi/Ass_Ref/$input1/pggb/$base2/$base1  > $output1                                  
+bcftools view  -i 'GT="0|1" || GT="1|0" || GT="0|2" || GT="2|0"' outputpggb.vcf  > $output1                                  
 cut -f 1,2,4,10 $output1 > $output2                                                                                  
 
 bedtools intersect -wao -a $output1 -b gff_proteincoding.gff > $output3             
