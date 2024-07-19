@@ -159,10 +159,10 @@ library(ggplotify)
 
 
 # Read the gene list from the file
-gene_list <- scan("BN_Lx_Cubunique_gene_list.txt", what = "", sep = "\n")
+gene_list <- scan("input.txt", what = "", sep = "\n")
 
 # Perform the enrichment analysis using g:Profiler
-gprofiler_results <- gost(query = gene_list, organism = "rnorvegicus")
+gprofiler_results <- gost(query = gene_list, organism = "rnorvegicus") #replace this with your organism
 
 # Generate the main plot using gostplot
 main_plot <- gostplot(gprofiler_results, capped = FALSE, interactive = FALSE)
