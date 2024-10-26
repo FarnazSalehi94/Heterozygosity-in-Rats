@@ -208,6 +208,7 @@ awk 'BEGIN { OFS="\t" }
 
 ```
 
+``` bash script.sh AssemblyName InputDestination OutputDestination```
 
 # Enrichment Analysis
 
