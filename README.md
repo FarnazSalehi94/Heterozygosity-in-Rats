@@ -1,7 +1,7 @@
 Heterozygosity-in-Rats
 
-# Mapping {.tabset}
-## First Step {-}
+# Mapping 
+## First Step:
 
 We need assemblies (alternate and primary) and reference (latest version of the reference in your species).
 The file types are FASTA.
@@ -136,6 +136,15 @@ sort $output5 | uniq > $output6
 echo This is something $(date)
 ```
 
+# Heatmap
+
+
+# Coverage
+
+# Segmental Duplications
+
+
+# Het Rate
 
 
 # Enrichment Analysis
