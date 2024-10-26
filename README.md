@@ -1,7 +1,7 @@
 Heterozygosity-in-Rats
 
-
-First Step:
+# Mapping
+## First Step:
 
 We need assemblies (alternate and primary) and reference (latest version of the reference in your species).
 The file types are FASTA.
@@ -51,9 +51,9 @@ $samtools faidx "$outputfinal" #need to index file before running pggb
 sbatch -p workers -c 48 --wrap 'pggb -D /scratch/PGGB -i "$outputfinal" -t 48 -o outputvcf2.2 -V grcr8'
 ```
 
-Second Step:
+## Second Step:
 
-Editing column name;
+### Editing column name;
 
 
 Downloading GFF and FNA format files from these links:
@@ -91,7 +91,7 @@ Extracting protein-coding genes.
 
 ```grep 'gene_biotype=protein_coding' updated_gff_file4.gff > gff_proteincoding.gff```
 
-Third Step: 
+## Third Step: 
 
 
 Intersecting the first and second steps to get a gene list related to heterozygosity.
@@ -138,9 +138,9 @@ echo This is something $(date)
 
 
 
-Enrichment Analysis
+# Enrichment Analysis
 
-gProfiler:
+## gProfiler:
 
 ```
 cat > automatedEAgprofiler.R << 'EOF'
@@ -211,6 +211,8 @@ cat("Enrichment analysis complete and result saved as gprofiler_combined_results
 EOF
 ```
 
+### Homologene
+
 for EnrichR, and ToppGene, they do not accept rat gene list; therefore we need to translate our rat gene list to human. 
 
 
@@ -266,7 +268,7 @@ write.table(first_column, file = output_file, quote = FALSE, row.names = FALSE, 
 
 
 
-EnrichR:
+## EnrichR:
 
 
 ```vi automatedEnrichR.R```
