@@ -146,6 +146,66 @@ echo This is something $(date)
 
 # Het Rate
 
+In this section, for calculation the per-base pair rate of heterozygosity for each gene, the following steps are needed:
+Counting the overlaps for each gene.
+Dividing the count by the length of each gene.
+
+
+```#!/bin/bash
+
+# Check if the assembly name, path, and destination are provided
+if [ "$#" -ne 3 ]; then
+            echo "Usage: $0 <assembly_name> <path> <destination>"
+                exit 1
+fi
+
+# Set the assembly name, path, and destination
+assembly=$1
+path=$2
+destination=$3
+
+# Create the 'hetrate' directory in the provided path and move to it
+mkdir -p "$path/hetrate"
+cd "$path/hetrate" || { echo "Failed to change directory to $path/hetrate"; exit 1; }
+
+# first step : Het Rate counts
+awk '{count[$1]++} END {for (gene in count) print gene, count[gene]}' "$path/${assembly}gene_list_without_prefix.txt" > "${assembly}gene_counts.txt"
+
+# second step: Gene Length
+awk 'BEGIN {OFS="\t"} $3 == "gene" {split($9, a, ";"); for (i in a) {if (a[i] ~ /^Name=/) {split(a[i], b, "="); print b[2], $1, $4, $5}}}' /lizardfs/salehi/Ass_Ref/BN_Lx_Cub/pggb/BN_Lx_CubcombinedfinalGRCr8vcf.2/test/gff_proteincoding.gff > "${assembly}gene_positions.txt"
+
+# third : merging the files
+join -1 1 -2 1 <(sort "${assembly}gene_counts.txt") <(sort "${assembly}gene_positions.txt") > "${assembly}merged_output.txt"
+
+# fourth step: measuring het rate
+awk 'BEGIN { OFS="\t" } 
+{
+          if (NF >= 5) {  # Check if there are at least 5 fields
+                      total_variants = $2;
+                          region_length = $5 - $4;
+                              het_rate = total_variants / region_length;
+                                  printf "%s\t%s\t%.8f\n", $0, region_length, het_rate; 
+                                    } else {
+                                        print "Error: Not enough fields in line:", $0;  # Error handling
+                                          }
+                          }' "${assembly}merged_output.txt" > "${assembly}merged_with_hetrate.txt"
+
+                  # fifth step: sorting based on the Het Rate
+                  sort -k 7,7nr "${assembly}merged_with_hetrate.txt" -o "${assembly}merged_with_hetrate_sorted.txt"
+
+                  # header
+                  awk 'BEGIN { print "Contig\tStart\tEnd\tGeneName\tCount\tLength\tHetRate" } { print $3, $4, $5, $1, $2, $6, $7 }' OFS="\t" "${assembly}merged_with_hetrate_sorted.txt" > "${assembly}.hetrate.bed"
+
+                  # sixth step : top 100
+                  awk 'NR==1 { print; next } { print $0 | "sort -k7,7nr" }' "${assembly}.hetrate.bed" | head -n 100 > "${assembly}top100.bed"
+
+                  # Copy the top100 file to the specified destination
+                  cp "${assembly}top100.bed" "$destination"
+
+                  echo "Processing complete. Output files prefixed with '${assembly}_', and '${assembly}top100.bed' copied to '$destination'."
+
+```
+
 
 # Enrichment Analysis
 
