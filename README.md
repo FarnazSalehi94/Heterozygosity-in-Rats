@@ -147,7 +147,9 @@ echo This is something $(date)
 # Het Rate
 
 In this section, for calculation the per-base pair rate of heterozygosity for each gene, the following steps are needed:
+
 __1.__ Counting the overlaps for each gene.
+
 __2.__ Dividing the count by the length of each gene.
 
 
