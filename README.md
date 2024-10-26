@@ -1,7 +1,7 @@
 Heterozygosity-in-Rats
 
-# Mapping
-## First Step:
+# Mapping {.tabset}
+## First Step {-}
 
 We need assemblies (alternate and primary) and reference (latest version of the reference in your species).
 The file types are FASTA.
