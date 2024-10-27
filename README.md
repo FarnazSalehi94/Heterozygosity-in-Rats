@@ -1,4 +1,4 @@
-# _**Heterozygosity-in-Rats**_
+# _**Exploring Heterozygosity in Inbred Rats**_
 
 # Mapping 
 ## First Step:
