@@ -142,7 +142,8 @@ echo This is something $(date)
 # Coverage
 
 
-```#!/bin/bash
+```
+#!/bin/bash
 
 # Variables
 fai_file="$1"      # Input FAI file (FASTA index)
@@ -191,6 +192,48 @@ echo "BED file generated: $bed_output"
 
 ```bedtools coverage -a output1 -b hifi.bam > output2.bed```
 
+R script
+
+```
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Read the data
+data <- read.table("newcoverage.merged.windows10kb.header.labeled.bed", header = TRUE)
+head(data)
+
+# Prepare the data by averaging coverage per position and label
+average_coverage <- data %>%
+  group_by(label, start) %>%
+  summarise(avg_coverage = mean(coverage), .groups = 'drop')
+
+# Create a density plot with a white background
+density_plot <- ggplot(average_coverage, aes(x = avg_coverage, fill = label)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Average Coverage",
+       x = "Average Coverage",
+       y = "Density") +
+  theme_minimal(base_family = "serif") +  # Add base_family for text styling
+  theme(plot.background = element_rect(fill = "white"), # Set background to white
+        panel.background = element_rect(fill = "white")) # Set panel background to white
+
+# Save the density plot
+ggsave("density_plot.png", plot = density_plot, width = 8, height = 6, dpi = 300)
+
+# Create a violin plot with a white background
+violin_plot <- ggplot(average_coverage, aes(x = label, y = avg_coverage, fill = label)) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Violin Plot of Average Coverage by Label",
+       x = "Label",
+       y = "Average Coverage") +
+  theme_minimal(base_family = "serif") +  # Add base_family for text styling
+  theme(plot.background = element_rect(fill = "white"), # Set background to white
+        panel.background = element_rect(fill = "white")) # Set panel background to white
+
+# Save the violin plot
+ggsave("violin_plot.png", plot = violin_plot, width = 8, height = 6, dpi = 300)
+```
 
 # Segmental Duplications
 
@@ -204,7 +247,8 @@ __1.__ Counting the overlaps for each gene.
 __2.__ Dividing the count by the length of each gene.
 
 
-```#!/bin/bash
+```
+#!/bin/bash
 
 # Check if the assembly name, path, and destination are provided
 if [ "$#" -ne 3 ]; then
