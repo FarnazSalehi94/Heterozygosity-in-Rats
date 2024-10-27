@@ -141,6 +141,57 @@ echo This is something $(date)
 
 # Coverage
 
+
+```#!/bin/bash
+
+# Variables
+fai_file="$1"      # Input FAI file (FASTA index)
+read_length="$2"   # Read length to add to the start/subtract from end
+window_size="$3"   # Window size to create BED records
+bed_output="$4"    # Output BED file
+
+# Check that required arguments are passed
+if [ $# -lt 4 ]; then
+  echo "Usage: $0 <fai_file> <read_length> <window_size> <bed_output>"
+  exit 1
+fi
+
+# Initialize the output BED file
+> "$bed_output"
+
+# Loop over each line in the FAI file
+while IFS=$'\t' read -r seq_name seq_length _; do
+  # Only proceed if sequence length is greater than 2 * read_length
+  if [ "$seq_length" -gt $((2 * read_length)) ]; then
+    # Calculate the adjusted start and end positions
+    start_pos=$read_length
+    end_pos=$((seq_length - read_length))
+
+    # Ensure that end_pos is still greater than read_length, as per the condition
+    if [ "$end_pos" -gt "$read_length" ]; then
+      # Generate windows between start_pos and end_pos, with the specified window_size
+      for (( window_start = start_pos; window_start <= end_pos; window_start += window_size )); do
+        # Calculate window end (make sure it doesn't exceed end_pos)
+        window_end=$((window_start + window_size - 1))
+        if [ "$window_end" -gt "$end_pos" ]; then
+          window_end="$end_pos"
+        fi
+
+        # Write BED record: chromosome/contig name, window start, window end
+        echo -e "${seq_name}\t${window_start}\t${window_end}" >> "$bed_output"
+      done
+    fi
+  fi
+done < "$fai_file"
+
+echo "BED file generated: $bed_output"
+```
+
+```bash coverage.sh file.fai read_lentgh window_size output1```
+
+```bedtools coverage -a output1 -b hifi.bam > output2.bed```
+
+
 # Segmental Duplications
 
 
