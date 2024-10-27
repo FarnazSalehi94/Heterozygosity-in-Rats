@@ -1,4 +1,4 @@
-Heterozygosity-in-Rats
+# _**Heterozygosity-in-Rats**_
 
 # Mapping 
 ## First Step:
