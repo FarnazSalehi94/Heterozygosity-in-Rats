@@ -237,6 +237,23 @@ ggsave("violin_plot.png", plot = violin_plot, width = 8, height = 6, dpi = 300)
 
 # Segmental Duplications
 
+```
+i=42; wfmash -t 16 aa.fa bb.fa -m -f >v.$i.paf && pafplot -d v.$i.paf 
+( echo chrom pos cov | tr ' ' '\t'; bedtools coverage -a <(echo rn6#1#chr1 | tr ' ' '\t') -b <(cut -f 6,8,9 v.42.paf ) -d | cut -f 1,4,5) > x.tsv
+awk '{
+    chr = $1; start = $2; end = $3; cov = $4;
+    label = (cov > 1) ? "dup" : cov;
+    if (chr != prev_chr || start != prev_end || label != prev_label) {
+        if (NR > 1) print prev_chr, prev_start, prev_end, prev_label;
+        prev_chr = chr; prev_start = start; prev_end = end; prev_label = label;
+    } else {
+        prev_end = end;
+    }
+}
+END {print prev_chr, prev_start, prev_end, prev_label}
+' grcr8.selfcov.bed | awk '$3 - $2 > 1000' | awk '$4 == "dup" {print $1 "\t" $2 "\t" $3}' > dup_regions.bed
+```
+
 
 # Het Rate
 
