@@ -252,6 +252,73 @@ awk '{
 }
 END {print prev_chr, prev_start, prev_end, prev_label}
 ' grcr8.selfcov.bed | awk '$3 - $2 > 1000' | awk '$4 == "dup" {print $1 "\t" $2 "\t" $3}' > dup_regions.bed
+
+FOR ASSEMBLIES:
+
+sbatch -p workers -c 48 --wrap "wfmash -t 16 ... .fa ... .fa -m -f > ... .paf"
+(-s 1k by default)
+
+cut -f 6,8,9 ... .paf > v.pri+alt.689.bed
+
+
+samtools faidx BN_Lx_Cub.pri+alt.fa
+
+awk '{print $1"\t"0"\t"$2}' BN_Lx_Cub.pri+alt.fa.fai > regions_of_fai_pri+alt.bed 
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_pri+alt.bed -b v.pri+alt.689.bed -d > coverage.pri+alt.new.bed"
+Submitted batch job 893111
+
+
+org.sh
+
+#!/bin/bash
+awk '{
+    if ($1 != prev_id || $5 != prev_val) {
+        if (NR > 1) {
+            print prev_id, start, prev_end, prev_val;
+        }
+        start = $4;
+    }
+    prev_id = $1;
+    prev_val = $5;
+    prev_end = $4;
+} END { print prev_id, start, prev_end, prev_val; }' coverage.pri+alt.new.bed > organized.pri+alt.new.bed
+
+Submitted batch job 893768
+
+
+
+
+segdup.sh
+
+#!/bin/bash
+awk '
+BEGIN {OFS="\t"}
+{
+    chr = $1; start = $2; end = $3; cov = $4;
+    label = (cov > 1) ? "dup" : cov;
+    if (chr != prev_chr || start != prev_end || label != prev_label) {
+        if (NR > 1) print prev_chr, prev_start, prev_end, prev_label;
+        prev_chr = chr; prev_start = start; prev_end = end; prev_label = label;
+    } else {
+        prev_end = end;
+    }
+}
+END {print prev_chr, prev_start, prev_end, prev_label}
+' organized.pri+alt.new.bed | awk '$3 - $2 > 1000' > segdup.pri+alt.new.bed
+
+Submitted batch job 893771
+
+awk '$4 == "dup" {sum += $3 - $2} END {print sum}' segdup.pri+alt.new.bed
+
+1197956178
+
+awk '!/^>/ {total += length($0)} END {print total}' BN_Lx_Cub.pri+alt.fa
+3351155118
+
+
+
+35.7475597 %
 ```
 
 
