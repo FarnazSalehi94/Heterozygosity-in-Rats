@@ -320,7 +320,231 @@ awk '!/^>/ {total += length($0)} END {print total}' BN_Lx_Cub.pri+alt.fa
 
 35.7475597 %
 ```
+# seg dup
 
+just in case to save the codes : 
+
+
+```
+Jan Segmental duplication
+sbatch -p workers -c 48 --wrap "wfmash -t 16 ... .fa ... .fa -m -f > ... .paf"
+(-s 1k by default)
+
+cut -f 6,8,9 ... .paf > v.pri+alt.689.bed
+
+After finding the bug:
+
+samtools faidx BN_Lx_Cub.pri+alt.fa
+
+awk '{print $1"\t"0"\t"$2}' BN_Lx_Cub.pri+alt.fa.fai > regions_of_fai_pri+alt.bed 
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_pri+alt.bed -b v.pri+alt.689.bed -d > coverage.pri+alt.new.bed"
+Submitted batch job 893111
+
+
+org.sh
+
+#!/bin/bash
+awk '{
+    if ($1 != prev_id || $5 != prev_val) {
+        if (NR > 1) {
+            print prev_id, start, prev_end, prev_val;
+        }
+        start = $4;
+    }
+    prev_id = $1;
+    prev_val = $5;
+    prev_end = $4;
+} END { print prev_id, start, prev_end, prev_val; }' coverage.pri+alt.new.bed > organized.pri+alt.new.bed
+
+Submitted batch job 893768
+
+
+
+
+segdup.sh
+
+#!/bin/bash
+awk '
+BEGIN {OFS="\t"}
+{
+    chr = $1; start = $2; end = $3; cov = $4;
+    label = (cov > 1) ? "dup" : cov;
+    if (chr != prev_chr || start != prev_end || label != prev_label) {
+        if (NR > 1) print prev_chr, prev_start, prev_end, prev_label;
+        prev_chr = chr; prev_start = start; prev_end = end; prev_label = label;
+    } else {
+        prev_end = end;
+    }
+}
+END {print prev_chr, prev_start, prev_end, prev_label}
+' organized.pri+alt.new.bed | awk '$3 - $2 > 1000' > segdup.pri+alt.new.bed
+
+Submitted batch job 893771
+
+awk '$4 == "dup" {sum += $3 - $2} END {print sum}' segdup.pri+alt.new.bed
+
+1197956178
+
+awk '!/^>/ {total += length($0)} END {print total}' BN_Lx_Cub.pri+alt.fa
+3351155118
+
+
+
+35.7475597 %
+
+
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_ref.bed -b v.ref.689.bed -d > coverage.ref.new.bed"
+
+Submitted batch job 894620
+
+
+
+cut -f 1,3,4 v.pri+alt+ref.paf > v.pri+alt+ref.134.bed 
+
+paf2chain -i v.ref.paf > v.ref.chain
+
+
+liftOver v.pri+alt+ref.134.bed v.ref.chain liftover.bed unlifted.bed   
+
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_ref.bed -b liftover.bed -d > coverage.liftover.new.bed"
+
+Submitted batch job 899933
+
+
+org.liftover.sh
+
+#!/bin/bash
+awk '{
+    if ($1 != prev_id || $5 != prev_val) {
+        if (NR > 1) {
+            print prev_id, start, prev_end, prev_val;
+        }
+        start = $4;
+    }
+    prev_id = $1;
+    prev_val = $5;
+    prev_end = $4;
+} END { print prev_id, start, prev_end, prev_val; }' coverage.liftover.new.bed > organized.liftover.bed
+
+
+sbatch org.liftover.sh 
+Submitted batch job 900429
+
+
+
+
+#!/bin/bash
+
+# Check if both input and output files are provided
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <input_bed_file> <output_bed_file>"
+    exit 1
+fi
+
+awk '{
+    if ($1 != prev_id || $5 != prev_val) {
+        if (NR > 1) {
+            print prev_id, start, prev_end, prev_val;
+        }
+        start = $4;
+    }
+    prev_id = $1;
+    prev_val = $5;
+    prev_end = $4;
+} END { 
+    print prev_id, start, prev_end, prev_val; 
+}' "$1" > "$2"
+
+
+#!/bin/bash
+
+# Check if both input and output files are provided
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <input_bed_file> <output_bed_file>"
+    exit 1
+fi
+
+# Process using command line arguments
+awk '
+BEGIN {OFS="\t"}
+{
+    chr = $1; start = $2; end = $3; cov = $4;
+    label = (cov > 1) ? "dup" : cov;
+    if (chr != prev_chr || start != prev_end || label != prev_label) {
+        if (NR > 1) print prev_chr, prev_start, prev_end, prev_label;
+        prev_chr = chr; prev_start = start; prev_end = end; prev_label = label;
+    } else {
+        prev_end = end;
+    }
+}
+END {print prev_chr, prev_start, prev_end, prev_label}
+' "$1" | awk '$3 - $2 > 1000' > "$2"
+
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_pri+alt.bed -b v.pri+alt.689.bed -d > coverage.pri+alt.new.bed"
+Submitted batch job 900918
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_ref.bed -b v.ref.689.bed -d > coverage.ref.new.bed"
+Submitted batch job 900919
+
+sbatch -p workers -c 48 --wrap "bedtools coverage -a regions_of_fai_ref.bed -b liftover.bed -d > coverage.liftover.new.bed"
+Submitted batch job 900920
+
+
+
+sbatch -p workers -c 48 org.sh coverage.pri+alt.new.bed organized.pri+alt.new.bed
+901149
+
+sbatch -p workers -c 48 org.sh coverage.ref.new.bed organized.ref.new.bed
+901150
+
+sbatch -p workers -c 48 org.sh coverage.liftover.new.bed organized.liftover.new.bed
+901151
+
+sbatch -p workers -c 48 segdup.sh organized.pri+alt.new.bed segdup.pri+alt.new.bed
+
+sbatch -p workers -c 48 segdup.sh organized.ref.new.bed segdup.ref.new.bed
+
+sbatch -p workers -c 48 segdup.sh organized.liftover.new.bed segdup.liftover.new.bed
+
+
+
+wc -l segdup.liftover.new.bed 
+369 segdup.liftover.new.bed
+
+wc -l segdup.pri+alt.new.bed 
+3346 segdup.pri+alt.new.bed
+
+wc -l segdup.ref.new.bed 
+757 segdup.ref.new.bed
+
+
+cat segdup.liftover.new.bed segdup.pri+alt.new.bed segdup.ref.new.bed | sort -k1,1 -k2,2n | bedtools merge > merged_segdup.bed
+
+
+wc -l merged_segdup.bed 
+3550 merged_segdup.bed
+
+bedtools intersect -a BN_Lx_CubcombinedfinalGRCr8.fa.gz.bf3285f.eb0f3d3.11fe66b.smooth.final.grcr8.vcf -b merged_segdup.bed -v > filtered.vcf
+bedtools subtract -a BN_Lx_CubcombinedfinalGRCr8.fa.gz.bf3285f.eb0f3d3.11fe66b.smooth.final.grcr8.vcf -b merged_segdup.bed > filtered_subtract.vcf
+
+
+3982302 BN_Lx_CubcombinedfinalGRCr8.fa.gz.bf3285f.eb0f3d3.11fe66b.smooth.final.grcr8.vcf
+3891034 filtered.vcf
+3891066 filtered_subtract.vcf
+
+
+awk '!/^#/ && $10 ~ /^(1\|0|0\|1|2\|0|0\|2)$/ && $10 !~ /\./ {print}' BN_Lx_CubcombinedfinalGRCr8.fa.gz.bf3285f.eb0f3d3.11fe66b.smooth.final.grcr8.vcf > BN_Lx_Cub.het.dup.vcf
+178870 BN_Lx_Cub.het.dup.vcf
+
+
+
+awk '!/^#/ && $10 ~ /^(1\|0|0\|1|2\|0|0\|2)$/ && $10 !~ /\./ {print}' filtered.vcf > BN_Lx_Cub.het.nodup.vcf
+174896 BN_Lx_Cub.het.nodup.vcf
+```
 
 # Het Rate
 
